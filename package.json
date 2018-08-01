@@ -1,0 +1,26 @@
+{
+  "name": "mars-server",
+  "version": "1.0.0",
+  "description": "Main piece of infrastructure to maintain contest of martian rovers",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node app/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dreamsel/martian-server.git"
+  },
+  "keywords": [
+    "programming",
+    "contest",
+    "martian",
+    "rover"
+  ],
+  "author": "Dmytro Selin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dreamsel/martian-server/issues"
+  },
+  "homepage": "https://github.com/dreamsel/martian-server#readme"
+}
