@@ -22,5 +22,6 @@
   "bugs": {
     "url": "https://github.com/dreamsel/martian-server/issues"
   },
-  "homepage": "https://github.com/dreamsel/martian-server#readme"
+  "homepage": "https://github.com/dreamsel/martian-server#readme",
+  "dependencies": {}
 }
