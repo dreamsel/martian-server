@@ -6,6 +6,30 @@ const TERRAIN = {
 }
 Object.freeze(TERRAIN);
 
+
+const RESOURCES = {
+  NONE: 0,
+  RAREEARTH: 1,
+  METAL: 2,
+  HYDRATES: 3
+}
+Object.freeze(RESOURCES);
+
+const PROBABILITIES = {
+  [RESOURCES.RAREEARTH]: 0.01,
+  [RESOURCES.METAL]: 0.1,
+  [RESOURCES.HYDRATES]: 0.2
+}
+Object.freeze(PROBABILITIES);
+
+const terrain2Resource = {
+  [TERRAIN.UNKNOWN] : RESOURCES.NONE,
+  [TERRAIN.PLAIN]: RESOURCES.RAREEARTH,
+  [TERRAIN.HILLS]: RESOURCES.METAL,
+  [TERRAIN.RIVER]: RESOURCES.HYDRATES,
+}
+Object.freeze(terrain2Resource);
+
 module.exports = (FIELD_SIZE) => {
   //const FIELD_SIZE = 10;
 
@@ -98,6 +122,12 @@ module.exports = (FIELD_SIZE) => {
     }
   }
   field[river.x2][river.y2] = TERRAIN.RIVER;//to be 100% sure
+
+  const generateResource = (terrainType) => Math.random() < PROBABILITIES[terrain2Resource[terrainType]] ?
+                            terrain2Resource[terrainType] : RESOURCES.NONE;
+
+  const resources = field.map(row => row.map(el => generateResource(el)));
+
   console.log(field);
-  return field;
+  return {field, resources};
 }

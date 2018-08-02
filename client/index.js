@@ -3,8 +3,8 @@ const session = require('express-session');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
-const fieldFactory = require('./field');
-const worker = require('./worker')
+const idController = require('./controllers/id-controller');
+const moveController = require('./controllers/move-controller');
 
 const app = express();
 app.use(bodyParser.json());
@@ -17,13 +17,12 @@ app.use(session({
 }));
 app.use(cors({credentials: true, origin: true}));
 
-const fieldData = fieldFactory(10);
 
-app.get('/', (req,res,next) => res.send('year'));
-app.get('/field', (req,res, next) => res.json(fieldData));
-const port = process.env.PORT || 8080;
+app.get('/', idController);
+app.post('/move', moveController);
+
+const port = process.env.PORT || 8081;
 app.listen(port, () => console.log('listening successfully'))
 
-worker(['http://localhost:8081'], fieldData);
 
 module.exports = app;
