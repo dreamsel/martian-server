@@ -1,0 +1,14 @@
+
+const ERRORS = {
+  WRONG_ROVER_ID: 1,
+  WRONG_MOVE: 2,
+  OUT_OF_BOUND: 3,
+  NO_ENERGY: 4,
+  NO_SPACE_FOR_RESOURCE: 5,
+  NO_MOVE_TO_FOREIGN_BASE: 6,
+  NO_MOVE_TO_FOREIGN_ROVER: 7,
+  CANT_DIG_ON_BASE: 8
+};
+Object.freeze(ERRORS);
+
+module.exports = ERRORS;
