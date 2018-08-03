@@ -31,7 +31,7 @@ const players = [
     url: 'http://localhost:8081',
 
     base: {x: 5, y: 5},
-    rovers: [{id: 1, x: 5, y: 5, energy: ROVER.MAX_ENERGY, load: []}],
+    rovers: [{id: 1, x: 5, y: 5, energy: ROVER.MAX_ENERGY, load: [], processed: false}],
     points: 0,
     max_rovers: 1,
     resources: {

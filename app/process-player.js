@@ -11,7 +11,7 @@ function processPlayerMove (roversActions, player, fieldData, players) {
   const response = { errors: {}, rovers: {} };
   roversActions.slice(0, player.max_rovers).forEach(action => {
     const rover = player.rovers.find(rover => rover.id === action.rover_id);
-    if (rover) {
+    if (rover && !rover.processed) {
       switch (action.action_type) {
         case 'move':
           action.moves.slice(ROVER.MAX_MOVES).forEach((move, index) => {
@@ -98,8 +98,9 @@ function processPlayerMove (roversActions, player, fieldData, players) {
     } else {
       response.errors[rover.id] = {code: ERRORS.WRONG_ROVER_ID, message: `wrong rover id ${rover.id}`};
     }
+    rover.processed = true;
   });
-  return true;
+  return response;
 }
 
 module.exports = processPlayerMove;
