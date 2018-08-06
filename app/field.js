@@ -96,10 +96,6 @@ module.exports = (FIELD_SIZE) => {
     ? terrain2Resource[terrainType] : RESOURCES.NONE;
 
   const resources = field.map(row => row.map(el => generateResource(el)));
-  const objects = {
-    base: {x: FIELD_SIZE / 2, y: FIELD_SIZE / 2},
-    rovers: [{id: 1, x: FIELD_SIZE / 2, y: FIELD_SIZE / 2, energy: 50}]
-  };
   console.log(field);
-  return {field, resources, objects, FIELD_SIZE};
+  return {field, resources, FIELD_SIZE};
 };

@@ -17,12 +17,10 @@ app.use(session({
 }));
 app.use(cors({credentials: true, origin: true}));
 
-
 app.get('/', idController);
 app.post('/move', moveController);
 
 const port = process.env.PORT || 8081;
-app.listen(port, () => console.log('listening successfully'))
-
+app.listen(port, () => console.log('listening successfully'));
 
 module.exports = app;

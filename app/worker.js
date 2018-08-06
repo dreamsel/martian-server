@@ -22,7 +22,7 @@ let processIPs = (players, fieldData) => {
       .then(responseForPlayer => { player.response = responseForPlayer })
       .catch(e => console.log(`fetching ${player.url} err`, e.message));
   });
-  setTimeout(processIPs, 1000);
+  setTimeout(processIPs, 5000);
 };
 
 const Worker = (players, fieldData) => {
@@ -39,7 +39,7 @@ const Worker = (players, fieldData) => {
     fieldData.resources[player.base.y][player.base.x] = RESOURCES.NONE;
   });
   processIPs = processIPs.bind(null, players, fieldData);
-  setTimeout(processIPs, 1000);
+  setTimeout(processIPs, 5000);
 };
 
 module.exports = Worker;

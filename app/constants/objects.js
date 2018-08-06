@@ -1,6 +1,6 @@
 const OBJECTS = {
-  base: 10,
-  rover: 11,
+  BASE: 10,
+  ROVER: 11,
 };
 Object.freeze(OBJECTS);
 
