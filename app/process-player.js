@@ -6,26 +6,27 @@ const OBJECTS = require('./constants/objects');
 const TERRAIN = require('./constants/terrain');
 
 function processPlayerMove (roversActions, player, fieldData, players) {
-  console.log('processPlayerMove', roversActions, player);
-
-  const response = { errors: {}, rovers: {} };
+  const response = { errors: {}, rovers: [], FIELD_SIZE: fieldData.FIELD_SIZE };
+  if (!Array.isArray(roversActions)) {
+    console.log('probably error ', roversActions.error, roversActions);
+    return {errors: 'wrong rover actions', rovers: player.rovers};
+  }
   roversActions.slice(0, player.max_rovers).forEach(action => {
-    const rover = player.rovers.find(rover => rover.id === action.rover_id);
+    const rover = player.rovers.find(rover => rover.id == action.rover_id); /* eslint-disable-line eqeqeq */
     if (rover) {
-      if (rover.processed) { /* do all stuff here */console.log(`rover ${rover.id} already processed`) }
-      rover.processed = true;
       switch (action.action_type) {
         case 'move':
-          action.moves.slice(ROVER.MAX_MOVES).forEach((move, index) => {
+          response.errors[rover.id] = [];
+          action.moves.slice(0, ROVER.MAX_MOVES).forEach((move, index) => {
             // check if this move is possible;
             if (rover.energy <= 0) {
               response.errors[rover.id][index] = {code: ERRORS.NO_ENERGY, message: 'lack of energy, please charge'};
-            } else if (![-1, 0, 1].includes(rover.x) ||
-            ![-1, 0, 1].includes(rover.y)) {
+            } else if (![-1, 0, 1].includes(move.dx) ||
+            ![-1, 0, 1].includes(move.dy)) {
               response.errors[rover.id][index] = {code: ERRORS.WRONG_MOVE, message: 'wrong move'};
             } else {
-              const newX = rover.x + move.params.x;
-              const newY = rover.y + move.params.y;
+              const newX = rover.x + move.dx;
+              const newY = rover.y + move.dy;
               if (newX < 0 || newX >= fieldData.FIELD_SIZE ||
                 newY < 0 || newY >= fieldData.FIELD_SIZE) {
                 response.errors[rover.id][index] = {code: ERRORS.OUT_OF_BOUND, message: 'move out of bound'};
@@ -40,13 +41,14 @@ function processPlayerMove (roversActions, player, fieldData, players) {
                 rover.x = newX;
                 rover.y = newY;
                 rover.energy -= 1;
-                if (rover.x === player.base.x && rover.y === player.base.y) {
+                if (rover.x === player.base.x && rover.y === player.base.y) { // rover came to own base
                   rover.energy = ROVER.MAX_ENERGY;
                   rover.load.forEach(resource => {
                     player.resources[resource] += 1;
                   });
                   rover.load = [];
                 }
+                console.log('processed rover move', newX, newY);
               }
             }
           });
@@ -56,13 +58,19 @@ function processPlayerMove (roversActions, player, fieldData, players) {
             response.errors[rover.id] = {code: ERRORS.CANT_DIG_ON_BASE, message: 'cannot dig on base'};
           } else if (rover.energy <= 0) {
             response.errors[rover.id] = {code: ERRORS.NO_ENERGY, message: 'lack of energy, please charge'};
+            console.log('lack of energy');
           } else if (rover.load.length >= ROVER.MAX_LOAD) {
             response.errors[rover.id] = {code: ERRORS.NO_SPACE_FOR_RESOURCE, message: 'no more space in trunk'};
+            console.log('no more space in trunk');
           } else if (fieldData.resources[rover.y][rover.x] !== RESOURCES.NONE) {
             const resource = fieldData.resources[rover.y][rover.x];
             rover.load.push(resource);
-            player.points += resource2points(resource);
+            player.points += resource2points[resource];
             fieldData.resources[rover.y][rover.x] = RESOURCES.HOLE; // there was already dug here
+            console.log('dig at ', rover.x, rover.y);
+          } else {
+            fieldData.resources[rover.y][rover.x] = RESOURCES.HOLE; // there was already dug here
+            console.log('dig at ', rover.x, rover.y);
           }
           break;
         case 'charge':
@@ -96,11 +104,12 @@ function processPlayerMove (roversActions, player, fieldData, players) {
         }
       }
 
-      response.rovers[rover.id] = { ...rover, area };
+      response.rovers.push({ ...rover, area });
     } else {
       response.errors[action.rover_id] = {code: ERRORS.WRONG_ROVER_ID, message: `wrong rover id ${action.rover_id}`};
     }
   });
+
   return response;
 }
 

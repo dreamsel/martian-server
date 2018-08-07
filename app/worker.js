@@ -5,10 +5,10 @@ const RESOURCES = require('./constants/resources');
 
 let processIPs = (players, fieldData) => {
   players.forEach(player => {
-    fetch(player.url)
+    /* fetch(player.url)
       .then(res => res.json())
       .then(text => console.log('fetch result', text))
-      .catch(e => console.log(`fetching ${player.url} err`, e.message));
+      .catch(e => console.log(`fetching ${player.url} err`, e.message)); */
     fetch(player.url + '/move', {
       method: 'POST',
       headers: {
@@ -22,7 +22,7 @@ let processIPs = (players, fieldData) => {
       .then(responseForPlayer => { player.response = responseForPlayer })
       .catch(e => console.log(`fetching ${player.url} err`, e.message));
   });
-  setTimeout(processIPs, 5000);
+  setTimeout(processIPs, 2000);
 };
 
 const Worker = (players, fieldData) => {
@@ -32,7 +32,7 @@ const Worker = (players, fieldData) => {
       points: player.points,
       max_rovers: player.max_rovers,
       resources: player.resources,
-      rovers: {...player.rovers, area: [[], [], []]},
+      rovers: player.rovers.map(rover => ({...rover, area: [[], [], []]})),
       errors: []
     };
     fieldData.field[player.base.y][player.base.x] = TERRAIN.BASE;
