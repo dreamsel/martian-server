@@ -89,7 +89,7 @@ function processPlayerMove (roversActions, player, fieldData, players) {
             fieldY >= 0 && fieldY < fieldData.FIELD_SIZE) {
             area[y][x] = {
               terrain: fieldData.field[fieldY][fieldX],
-              objects: []
+              objects: fieldData.resources[fieldY][fieldX] === RESOURCES.HOLE ? [OBJECTS.HOLE] : []
             };
             players.forEach(otherplayer => {
               if (otherplayer.rovers.some(otherrover => fieldX === otherrover.x && fieldY === otherrover.y)) {
