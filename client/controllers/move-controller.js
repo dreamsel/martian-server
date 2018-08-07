@@ -28,7 +28,7 @@ module.exports = (req, res, next) => {
         rover.area[randomY][randomX] &&
         rover.area[randomY][randomX].objects &&
         rover.area[randomY][randomX].objects.length !== 0;
-    } while ((cellDoesntExist || cellNotEmpty) && attempt < MAX_ATTEMPTS);
+    } while (cellDoesntExist || (cellNotEmpty && attempt < MAX_ATTEMPTS)); // go to buzy cells if no viable move was found during 10 attempts
     console.log(digging ? `move dx=${randomX - 1}, dy=${randomY - 1}` : 'dig');
 
     res.json([ digging
