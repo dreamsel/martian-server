@@ -62,7 +62,8 @@ function processPlayerMove (roversActions, player, fieldData, players) {
           } else if (rover.load.length >= ROVER.MAX_LOAD) {
             response.errors[rover.id] = {code: ERRORS.NO_SPACE_FOR_RESOURCE, message: 'no more space in trunk'};
             console.log('no more space in trunk');
-          } else if (fieldData.resources[rover.y][rover.x] !== RESOURCES.NONE) {
+          } else if (fieldData.resources[rover.y][rover.x] !== RESOURCES.NONE &&
+              fieldData.resources[rover.y][rover.x] !== RESOURCES.HOLE) {
             const resource = fieldData.resources[rover.y][rover.x];
             rover.load.push(resource);
             player.points += resource2points[resource];
