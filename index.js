@@ -1,1 +1,1 @@
-require('app/index.js')
+console.log('use "npm run server" or "npm run client" to run server or client accordingly');

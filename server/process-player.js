@@ -6,10 +6,11 @@ const OBJECTS = require('./constants/objects');
 const TERRAIN = require('./constants/terrain');
 
 function processPlayerMove (roversActions, player, fieldData, players) {
-  const response = { errors: {}, rovers: [], FIELD_SIZE: fieldData.FIELD_SIZE };
+  const response = { errors: {}, rovers: player.rovers, FIELD_SIZE: fieldData.FIELD_SIZE };
   if (!Array.isArray(roversActions)) {
     console.log('probably error ', roversActions.error, roversActions);
-    return {errors: 'wrong rover actions', rovers: player.rovers};
+    response.errors = 'wrong rover actions';
+    return response;
   }
   roversActions.slice(0, player.max_rovers).forEach(action => {
     const rover = player.rovers.find(rover => rover.id == action.rover_id); /* eslint-disable-line eqeqeq */

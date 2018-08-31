@@ -1,7 +1,9 @@
+const http = require('http');
 const express = require('express');
 const session = require('express-session');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const WebSocketServer = require('websocket').server;
 
 const fieldFactory = require('./field');
 const worker = require('./worker');
@@ -48,11 +50,39 @@ app.get('/field', (req, res, next) => {
 });
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log('listening successfully'));
+const server = http.createServer(app);
+server.listen(port, () => console.log('listening successfully'));
 
+const wsServer = new WebSocketServer({
+  httpServer: server
+});
+
+const connections = {};
+wsServer.on('request', (req) => {
+  console.log('new request', req.origin, req.remoteAddress);
+  const connection = req.accept(null, req.origin);
+  connections[req.remoteAddress] = {connection, clientAnswer: null};
+  // add connection to pool
+  connection.on('message', (message) => {
+    if (message.type === 'utf8') {
+      try {
+        const json = JSON.parse(message.utf8Data);
+        connections[connection.remoteAddress].id = json.id;
+        connections[connection.remoteAddress].clientAnswer = json.answer;
+      } catch (e) {
+        console.log('server faild to parse json', message.utf8Data);
+      }
+    }
+  });
+  connection.on('close', (reason, descr) => {
+    console.log('connection closed', reason, descr, connection.remoteAddress);
+    // remove connection from pool
+    connections[connection.remoteAddress] = null;
+    delete connections[connection.remoteAddress];
+  });
+});
 const players = [
   { id: 1,
-    url: 'http://localhost:8081',
     name: 'team1',
     base: {x: 5, y: 5},
     rovers: [{id: 1, x: 5, y: 5, energy: ROVER.MAX_ENERGY, load: [], processed: false}],
@@ -65,7 +95,6 @@ const players = [
     }
   },
   { id: 2,
-    url: 'http://localhost:8082',
     name: 'team2',
     base: {x: 10, y: 10},
     rovers: [{id: 1, x: 10, y: 10, energy: ROVER.MAX_ENERGY, load: [], processed: false}],
@@ -79,6 +108,6 @@ const players = [
   }
 ];
 
-worker(players, fieldData);
+worker(players, connections, fieldData);
 
 module.exports = app;
