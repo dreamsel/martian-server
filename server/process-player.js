@@ -6,9 +6,10 @@ const OBJECTS = require('./constants/objects');
 const TERRAIN = require('./constants/terrain');
 
 function processPlayerMove (roversActions, player, fieldData, players) {
+  console.log('processing player Move');
   const response = { errors: {}, rovers: player.rovers, FIELD_SIZE: fieldData.FIELD_SIZE };
   if (!Array.isArray(roversActions)) {
-    console.log('probably error ', roversActions.error, roversActions);
+    console.log('probably error ', roversActions ? roversActions.error : '', roversActions);
     response.errors = 'wrong rover actions';
     return response;
   }

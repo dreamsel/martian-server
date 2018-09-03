@@ -2,22 +2,25 @@ const processPlayerMove = require('./process-player');
 const TERRAIN = require('./constants/terrain');
 const RESOURCES = require('./constants/resources');
 
-let processIPs = (players, connections, fieldData) => {
-  Object.keys(connections).forEach(key => {
-    const client = connections[key];
+let processIPs = (players, clients, fieldData) => {
+  console.log('server processIPs', Object.keys(clients).length);
+  Object.keys(clients).forEach(key => {
+    console.log('processing key', key);
+    const client = clients[key];
     const player = players.find(player => player.id === client.id);
+    console.log('got player', player);
     if (player) {
       // process player and client.clientAnswer
       processPlayerMove(client.clientAnswer, player, fieldData, players);
       client.clientAnswer = null;
-      client.send(JSON.stringify({command: 'move', data: player.response}));
+      client.connection.send(JSON.stringify({command: 'move', data: player.response}));
     }
   });
 
   setTimeout(processIPs, 2000);
 };
 
-const Worker = (players, connections, fieldData) => {
+const Worker = (players, clients, fieldData) => {
   players.forEach(player => {
     player.response = {
       base: player.base,
@@ -31,7 +34,7 @@ const Worker = (players, connections, fieldData) => {
     fieldData.resources[player.base.y][player.base.x] = RESOURCES.NONE;
   });
 
-  processIPs = processIPs.bind(null, players, connections, fieldData);
+  processIPs = processIPs.bind(null, players, clients, fieldData);
   setTimeout(processIPs, 5000);
 };
 

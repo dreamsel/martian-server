@@ -1,18 +1,20 @@
+const fs = require('fs');
+
 let digging = true;
 const ROVER_ID = process.env.ROVER_ID || 1;
 const MAX_ATTEMPTS = 10;
 const MAX_LOAD = 3;
 
 const base = {};
-
+const log = fs.createWriteStream('child-moveController.log');
 module.exports = (req) => {
   const errors = req.errors;
   if (Object.keys(errors).length > 0) {
-    console.log('errors', errors);
+    log.write(`errors ${JSON.stringify(errors)}\n`);
   }
   const rover = req.rovers ? req.rovers[0] : null;
   if (!rover) {
-    console.log('wrong rover', req.rovers, req);
+    log.write(`wrong rover=${rover}, rovers=${JSON.stringify(req.rovers)} \n`);
     return {error: 'no rovers data'};
   } else {
     if (typeof base.x === 'undefined' && typeof base.y === 'undefined') {
@@ -46,7 +48,6 @@ module.exports = (req) => {
               rover.area[randomY][randomX].objects &&
               rover.area[randomY][randomX].objects.length !== 0;
           } while (cellNotEmpty && attempt < MAX_ATTEMPTS); // go to buzy cells if no viable move was found during 10 attempts
-          console.log(digging ? `move dx=${randomX - 1}, dy=${randomY - 1}` : 'dig');
 
           return [{rover_id: ROVER_ID, action_type: 'move', dx: randomX - 1, dy: randomY - 1}];
         }

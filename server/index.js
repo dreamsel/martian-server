@@ -57,18 +57,19 @@ const wsServer = new WebSocketServer({
   httpServer: server
 });
 
-const connections = {};
+const clients = {};
 wsServer.on('request', (req) => {
   console.log('new request', req.origin, req.remoteAddress);
   const connection = req.accept(null, req.origin);
-  connections[req.remoteAddress] = {connection, clientAnswer: null};
+  clients[req.remoteAddress] = {connection, clientAnswer: null};
   // add connection to pool
   connection.on('message', (message) => {
     if (message.type === 'utf8') {
+      console.log('server: got message from client', message);
       try {
         const json = JSON.parse(message.utf8Data);
-        connections[connection.remoteAddress].id = json.id;
-        connections[connection.remoteAddress].clientAnswer = json.answer;
+        clients[connection.remoteAddress].id = json.id;
+        clients[connection.remoteAddress].clientAnswer = json.answer;
       } catch (e) {
         console.log('server faild to parse json', message.utf8Data);
       }
@@ -77,8 +78,8 @@ wsServer.on('request', (req) => {
   connection.on('close', (reason, descr) => {
     console.log('connection closed', reason, descr, connection.remoteAddress);
     // remove connection from pool
-    connections[connection.remoteAddress] = null;
-    delete connections[connection.remoteAddress];
+    clients[connection.remoteAddress] = null;
+    delete clients[connection.remoteAddress];
   });
 });
 const players = [
@@ -108,6 +109,6 @@ const players = [
   }
 ];
 
-worker(players, connections, fieldData);
+worker(players, clients, fieldData);
 
 module.exports = app;
