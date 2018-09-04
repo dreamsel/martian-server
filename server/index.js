@@ -58,32 +58,9 @@ const wsServer = new WebSocketServer({
 });
 
 const clients = {};
-wsServer.on('request', (req) => {
-  console.log('new request', req.origin, req.remoteAddress);
-  const connection = req.accept(null, req.origin);
-  clients[req.remoteAddress] = {connection, clientAnswer: null};
-  // add connection to pool
-  connection.on('message', (message) => {
-    if (message.type === 'utf8') {
-      console.log('server: got message from client', message);
-      try {
-        const json = JSON.parse(message.utf8Data);
-        clients[connection.remoteAddress].id = json.id;
-        clients[connection.remoteAddress].clientAnswer = json.answer;
-      } catch (e) {
-        console.log('server faild to parse json', message.utf8Data);
-      }
-    }
-  });
-  connection.on('close', (reason, descr) => {
-    console.log('connection closed', reason, descr, connection.remoteAddress);
-    // remove connection from pool
-    clients[connection.remoteAddress] = null;
-    delete clients[connection.remoteAddress];
-  });
-});
+
 const players = [
-  { id: 1,
+  { id: 10,
     name: 'team1',
     base: {x: 5, y: 5},
     rovers: [{id: 1, x: 5, y: 5, energy: ROVER.MAX_ENERGY, load: [], processed: false}],
@@ -108,7 +85,35 @@ const players = [
     }
   }
 ];
-
 worker(players, clients, fieldData);
+
+wsServer.on('request', (req) => {
+  console.log('new request', req.origin, req.remoteAddress);
+  const connection = req.accept(null, req.origin);
+  clients[req.remoteAddress] = {connection, clientAnswer: null};
+  // add connection to pool
+  connection.on('message', (message) => {
+    if (message.type === 'utf8') {
+      console.log('server: got message from client', message);
+      try {
+        const json = JSON.parse(message.utf8Data);
+        if (players.some(el => el.id == json.id)) { // eslint-disable-line eqeqeq
+          clients[connection.remoteAddress].id = json.id;
+          clients[connection.remoteAddress].clientAnswer = json.answer;
+        } else {
+          connection.send(JSON.stringify({error: `Wrong id ${json.id}`}));
+        }
+      } catch (e) {
+        console.log('server faild to parse json', message.utf8Data);
+      }
+    }
+  });
+  connection.on('close', (reason, descr) => {
+    console.log('connection closed', reason, descr, connection.remoteAddress);
+    // remove connection from pool
+    clients[connection.remoteAddress] = null;
+    delete clients[connection.remoteAddress];
+  });
+});
 
 module.exports = app;

@@ -2,12 +2,13 @@ const WebSocketClient = require('websocket').client;
 const {spawn} = require('child_process');
 
 const myId = 1;
-
-const child = spawn('./client/wrapped.js');
+const childPath = process.argv[2] || './client/python_client.py';
+const child = spawn(childPath);
 
 let wsConnection = null;
 
 child.stdout.on('data', (data) => {
+  console.log('msg from child', data);
   const strData = data.toString('utf8').trim();
   try {
     const json = JSON.parse(strData);
@@ -25,9 +26,8 @@ client.on('connect', (connection) => {
   connection.on('message', (message) => {
     try {
       if (message.type === 'utf8') {
-        console.log('message from server');
-        child.stdin.write(message.utf8Data);
-        console.log('message sent to child');
+        console.log('message to child');
+        child.stdin.write(message.utf8Data + '\n');
       }
     } catch (e) {
       console.log('error when sent to child', e.message);

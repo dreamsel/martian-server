@@ -6,7 +6,6 @@ const fs = require('fs');
 
 const log = fs.createWriteStream('child.log');
 process.stdin.on('data', (data) => {
-  log.write('child got message\n');
   try {
     const input = JSON.parse(data.toString('utf8').trim());
     let result = {success: false, msg: 'unknown command'};

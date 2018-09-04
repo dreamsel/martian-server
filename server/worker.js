@@ -7,8 +7,8 @@ let processIPs = (players, clients, fieldData) => {
   Object.keys(clients).forEach(key => {
     console.log('processing key', key);
     const client = clients[key];
-    const player = players.find(player => player.id === client.id);
-    console.log('got player', player);
+    const player = players.find(player => player.id == client.id); // eslint-disable-line eqeqeq
+    console.log('got player', player, ' for client.id=', client.id);
     if (player) {
       // process player and client.clientAnswer
       processPlayerMove(client.clientAnswer, player, fieldData, players);
