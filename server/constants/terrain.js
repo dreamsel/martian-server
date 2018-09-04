@@ -3,7 +3,8 @@ const TERRAIN = {
   PLAIN: 1,
   HILLS: 2,
   RIVER: 3,
-  BASE: 4
+  CRATER: 4,
+  BASE: 5
 };
 Object.freeze(TERRAIN);
 

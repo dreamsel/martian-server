@@ -3,7 +3,8 @@ const RESOURCES = {
   RAREEARTH: 1,
   METAL: 2,
   HYDRATES: 3,
-  HOLE: 4
+  URANIUM: 4,
+  HOLE: 5
 };
 Object.freeze(RESOURCES);
 

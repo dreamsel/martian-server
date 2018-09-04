@@ -70,6 +70,7 @@ const players = [
       [RESOURCES.RAREEARTH]: 0,
       [RESOURCES.METAL]: 0,
       [RESOURCES.HYDRATES]: 0,
+      [RESOURCES.URANIUM]: 0,
     }
   },
   { id: 2,
@@ -82,6 +83,7 @@ const players = [
       [RESOURCES.RAREEARTH]: 0,
       [RESOURCES.METAL]: 0,
       [RESOURCES.HYDRATES]: 0,
+      [RESOURCES.URANIUM]: 0,
     }
   }
 ];
