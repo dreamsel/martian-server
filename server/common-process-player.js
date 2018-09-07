@@ -3,9 +3,10 @@ const resource2points = require('./constants/resource2points');
 const ROVER = require('./constants/rover');
 const ERRORS = require('./constants/errors');
 const OBJECTS = require('./constants/objects');
+const TERRAIN = require('./constants/terrain');
 
-function processPlayerMove (roversActions, player) {
-  const fieldData = player.fieldData;
+function processPlayerMove (roversActions, player, fieldData, players) {
+  console.log('processing player Move');
   const response = { errors: {}, rovers: player.rovers, FIELD_SIZE: fieldData.FIELD_SIZE };
   if (!Array.isArray(roversActions)) {
     console.log('probably error ', roversActions ? roversActions.error : '', roversActions);
@@ -27,9 +28,12 @@ function processPlayerMove (roversActions, player) {
             const newX = (rover.x + action.dx + fieldData.FIELD_SIZE) % fieldData.FIELD_SIZE; // make field round connected
             const newY = (rover.y + action.dy + fieldData.FIELD_SIZE) % fieldData.FIELD_SIZE;
 
-            if (player.rovers.some(otherrover => // including also other rovers of same player
-              otherrover.x === newX && otherrover.y === newY
-            )) {
+            if (fieldData.field[newY][newX] === TERRAIN.BASE && (newX !== player.base.x || newY !== player.base.y)) {
+              response.errors[rover.id] = {code: ERRORS.NO_MOVE_TO_FOREIGN_BASE, message: 'cannot move to foreign base'};
+            } else if (players.some(otherplayer =>
+              otherplayer.rovers.some(otherrover => // including also other rovers of same player
+                otherrover.x === newX && otherrover.y === newY
+              ))) {
               response.errors[rover.id] = {code: ERRORS.NO_MOVE_TO_FOREIGN_ROVER, message: 'cannot move, tile occupied by other rover'};
             } else {
               rover.x = newX;
@@ -84,12 +88,14 @@ function processPlayerMove (roversActions, player) {
             terrain: fieldData.field[fieldY][fieldX],
             objects: fieldData.resources[fieldY][fieldX] === RESOURCES.HOLE ? [OBJECTS.HOLE] : []
           };
-          if (player.rovers.some(otherrover => fieldX === otherrover.x && fieldY === otherrover.y)) {
-            area[y][x].objects.push(OBJECTS.ROVER);
-          };
-          if (fieldX === player.base.x && fieldY === player.base.y) {
-            area[y][x].objects.push(OBJECTS.BASE);
-          }
+          players.forEach(otherplayer => {
+            if (otherplayer.rovers.some(otherrover => fieldX === otherrover.x && fieldY === otherrover.y)) {
+              area[y][x].objects.push(OBJECTS.ROVER);
+            };
+            if (fieldX === otherplayer.base.x && fieldY === otherplayer.base.y) {
+              area[y][x].objects.push(OBJECTS.BASE);
+            }
+          });
         }
       }
 

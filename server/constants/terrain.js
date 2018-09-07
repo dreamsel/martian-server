@@ -4,7 +4,8 @@ const TERRAIN = {
   HILLS: 2,
   RIVER: 3,
   CRATER: 4,
-  BASE: 5
+  MOUNTAIN: 5, // unpassable
+  BASE: 6
 };
 Object.freeze(TERRAIN);
 

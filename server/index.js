@@ -5,11 +5,15 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const WebSocketServer = require('websocket').server;
 
-const fieldFactory = require('./field');
+const fieldFactory = require('./fields/field');
 const worker = require('./worker');
 const ROVER = require('./constants/rover');
 const RESOURCES = require('./constants/resources');
 const OBJECTS = require('./constants/objects');
+
+const generateFields = process.argv[2] === 'generate';
+const level = !generateFields ? (process.argv[2] || 1) : 1;
+const commonFieldData = generateFields ? fieldFactory.generate(12) : fieldFactory.predefined(level);
 
 const app = express();
 app.use(bodyParser.json());
@@ -22,11 +26,10 @@ app.use(session({
 }));
 app.use(cors({credentials: true, origin: true}));
 
-const fieldData = fieldFactory(12);
-
 app.get('/', (req, res, next) => res.send('year'));
 
-app.get('/field', (req, res, next) => {
+app.get('/commonfield', (req, res, next) => {
+  const fieldData = commonFieldData;
   const field = [];
   for (let y = 0; y < fieldData.FIELD_SIZE; y++) {
     field[y] = [];
@@ -47,6 +50,35 @@ app.get('/field', (req, res, next) => {
     player.rovers.forEach(rover => field[rover.y][rover.x].objects.push(OBJECTS.ROVER));
   });
   return res.json({success: true, field, players: playersData});
+});
+
+app.get('/field', (req, res, next) => {
+  const playerid = req.query.playerid;
+  const foundPlayer = players.find(player => player.id === playerid);
+  if (foundPlayer) {
+    const fieldData = foundPlayer.fieldData;
+    const field = [];
+    for (let y = 0; y < fieldData.FIELD_SIZE; y++) {
+      field[y] = [];
+      for (let x = 0; x < fieldData.FIELD_SIZE; x++) {
+        field[y][x] = {terrain: fieldData.field[y][x], resource: fieldData.resources[y][x], objects: []};
+      }
+    }
+    // put rovers on map
+    const playersData = {
+      id: foundPlayer.id,
+      name: foundPlayer.name,
+      points: foundPlayer.points,
+      resources: foundPlayer.resources,
+      rovers: foundPlayer.rovers.length
+    };
+    field[foundPlayer.base.y][foundPlayer.base.x].objects.push(OBJECTS.BASE);
+    foundPlayer.rovers.forEach(rover => field[rover.y][rover.x].objects.push(OBJECTS.ROVER));
+
+    return res.json({success: true, field, players: playersData});
+  } else {
+    res.json({success: false, message: 'no player found for this playerid'});
+  }
 });
 
 const port = process.env.PORT || 3000;
@@ -71,7 +103,8 @@ const players = [
       [RESOURCES.METAL]: 0,
       [RESOURCES.HYDRATES]: 0,
       [RESOURCES.URANIUM]: 0,
-    }
+    },
+    fieldData: generateFields ? fieldFactory.generate(12) : fieldFactory.predefined(level)
   },
   { id: 2,
     name: 'team2',
@@ -84,10 +117,12 @@ const players = [
       [RESOURCES.METAL]: 0,
       [RESOURCES.HYDRATES]: 0,
       [RESOURCES.URANIUM]: 0,
-    }
+    },
+    fieldData: generateFields ? fieldFactory.generate(12) : fieldFactory.predefined(level)
   }
 ];
-worker(players, clients, fieldData);
+// worker(players, clients, fieldData);
+worker(players, clients);
 
 wsServer.on('request', (req) => {
   console.log('new request', req.origin, req.remoteAddress);
