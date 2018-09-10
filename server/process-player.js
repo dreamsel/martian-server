@@ -3,16 +3,17 @@ const resource2points = require('./constants/resource2points');
 const ROVER = require('./constants/rover');
 const ERRORS = require('./constants/errors');
 const OBJECTS = require('./constants/objects');
+const TERRAIN = require('./constants/terrain');
 
 function processPlayerMove (roversActions, player) {
   const fieldData = player.fieldData;
-  const response = { errors: {}, rovers: player.rovers, FIELD_SIZE: fieldData.FIELD_SIZE };
+  const response = { errors: {}, base: player.base, rovers: player.rovers, FIELD_SIZE: fieldData.FIELD_SIZE };
   if (!Array.isArray(roversActions)) {
     console.log('probably error ', roversActions ? roversActions.error : '', roversActions);
     response.errors = 'wrong rover actions';
     return response;
   }
-  roversActions.slice(0, player.max_rovers).forEach(action => {
+  roversActions.slice(0, player.max_rovers).forEach(action => { // TODO handle 2 actions for same rover
     const rover = player.rovers.find(rover => rover.id == action.rover_id); /* eslint-disable-line eqeqeq */
     if (rover) {
       switch (action.action_type) {
@@ -27,7 +28,9 @@ function processPlayerMove (roversActions, player) {
             const newX = (rover.x + action.dx + fieldData.FIELD_SIZE) % fieldData.FIELD_SIZE; // make field round connected
             const newY = (rover.y + action.dy + fieldData.FIELD_SIZE) % fieldData.FIELD_SIZE;
 
-            if (player.rovers.some(otherrover => // including also other rovers of same player
+            if (fieldData.field[newY][newX] === TERRAIN.MOUNTAIN) {
+              response.errors[rover.id] = {code: ERRORS.NO_MOVE_TO_MOUNTAIN, message: 'cannot move to mountain'};
+            } else if (player.rovers.some(otherrover => // including also other rovers of same player
               otherrover.x === newX && otherrover.y === newY
             )) {
               response.errors[rover.id] = {code: ERRORS.NO_MOVE_TO_FOREIGN_ROVER, message: 'cannot move, tile occupied by other rover'};
@@ -62,9 +65,11 @@ function processPlayerMove (roversActions, player) {
             rover.load.push(resource);
             player.points += resource2points[resource];
             fieldData.resources[rover.y][rover.x] = RESOURCES.HOLE; // there was already dug here
+            rover.energy -= 1;
             console.log('dig at ', rover.x, rover.y, 'got', rover.load);
           } else {
             fieldData.resources[rover.y][rover.x] = RESOURCES.HOLE; // there was already dug here
+            rover.energy -= 1;
             console.log('dig empty at ', rover.x, rover.y);
           }
           break;
@@ -93,7 +98,7 @@ function processPlayerMove (roversActions, player) {
         }
       }
 
-      response.rovers.push({ ...rover, area });
+      rover.area = area;
     } else {
       response.errors[action.rover_id] = {code: ERRORS.WRONG_ROVER_ID, message: `wrong rover id ${action.rover_id}`};
     }

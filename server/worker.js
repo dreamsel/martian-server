@@ -8,12 +8,11 @@ let processIPs = (players, clients) => {
     console.log('processing key', key);
     const client = clients[key];
     const player = players.find(player => player.id == client.id); // eslint-disable-line eqeqeq
-    console.log('got player', player, ' for client.id=', client.id);
     if (player) {
       // process player and client.clientAnswer
-      processPlayerMove(client.clientAnswer, player);
+      const response = processPlayerMove(client.clientAnswer, player);
       client.clientAnswer = null;
-      client.connection.send(JSON.stringify({command: 'move', data: player.response}));
+      client.connection.send(JSON.stringify({command: 'move', data: response}));
     }
   });
 

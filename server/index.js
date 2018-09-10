@@ -4,12 +4,14 @@ const session = require('express-session');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const WebSocketServer = require('websocket').server;
+const deepcopy = require('deepcopy');
 
 const fieldFactory = require('./fields/field');
 const worker = require('./worker');
 const ROVER = require('./constants/rover');
 const RESOURCES = require('./constants/resources');
 const OBJECTS = require('./constants/objects');
+const TERRAIN = require('./constants/terrain');
 
 const generateFields = process.argv[2] === 'generate';
 const level = !generateFields ? (process.argv[2] || 1) : 1;
@@ -52,9 +54,9 @@ app.get('/commonfield', (req, res, next) => {
   return res.json({success: true, field, players: playersData});
 });
 
-app.get('/field', (req, res, next) => {
-  const playerid = req.query.playerid;
-  const foundPlayer = players.find(player => player.id === playerid);
+app.get('/field/:playerid', (req, res, next) => {
+  const playerid = req.params.playerid;
+  const foundPlayer = players.find(player => player.id == playerid); // eslint-disable-line eqeqeq
   if (foundPlayer) {
     const fieldData = foundPlayer.fieldData;
     const field = [];
@@ -65,17 +67,17 @@ app.get('/field', (req, res, next) => {
       }
     }
     // put rovers on map
-    const playersData = {
+    const playerData = {
       id: foundPlayer.id,
       name: foundPlayer.name,
       points: foundPlayer.points,
       resources: foundPlayer.resources,
-      rovers: foundPlayer.rovers.length
+      rovers: foundPlayer.rovers.map(rover => ({id: rover.id, energy: rover.energy, load: rover.load}))
     };
     field[foundPlayer.base.y][foundPlayer.base.x].objects.push(OBJECTS.BASE);
     foundPlayer.rovers.forEach(rover => field[rover.y][rover.x].objects.push(OBJECTS.ROVER));
 
-    return res.json({success: true, field, players: playersData});
+    return res.json({success: true, field, player: playerData});
   } else {
     res.json({success: false, message: 'no player found for this playerid'});
   }
@@ -91,11 +93,21 @@ const wsServer = new WebSocketServer({
 
 const clients = {};
 
+const field = generateFields ? fieldFactory.generate(12) : fieldFactory.predefined(level);
+const base = {};
+for (let y = 0; y < field.field.length; y++) {
+  for (let x = 0; x < field.field[y].length; x++) {
+    if (field.field[y][x] === TERRAIN.BASE) {
+      base.x = x;
+      base.y = y;
+    }
+  }
+}
 const players = [
   { id: 10,
     name: 'team1',
-    base: {x: 5, y: 5},
-    rovers: [{id: 1, x: 5, y: 5, energy: ROVER.MAX_ENERGY, load: [], processed: false}],
+    base,
+    rovers: [{id: 1, x: base.x, y: base.y, energy: ROVER.MAX_ENERGY, load: [], processed: false}],
     points: 0,
     max_rovers: 1,
     resources: {
@@ -104,12 +116,12 @@ const players = [
       [RESOURCES.HYDRATES]: 0,
       [RESOURCES.URANIUM]: 0,
     },
-    fieldData: generateFields ? fieldFactory.generate(12) : fieldFactory.predefined(level)
+    fieldData: deepcopy(field)
   },
   { id: 2,
     name: 'team2',
-    base: {x: 10, y: 10},
-    rovers: [{id: 1, x: 10, y: 10, energy: ROVER.MAX_ENERGY, load: [], processed: false}],
+    base,
+    rovers: [{id: 1, x: base.x, y: base.y, energy: ROVER.MAX_ENERGY, load: [], processed: false}],
     points: 0,
     max_rovers: 1,
     resources: {
@@ -118,39 +130,49 @@ const players = [
       [RESOURCES.HYDRATES]: 0,
       [RESOURCES.URANIUM]: 0,
     },
-    fieldData: generateFields ? fieldFactory.generate(12) : fieldFactory.predefined(level)
+    fieldData: deepcopy(field)
   }
 ];
+
 // worker(players, clients, fieldData);
 worker(players, clients);
 
 wsServer.on('request', (req) => {
-  console.log('new request', req.origin, req.remoteAddress);
+  console.log('new request', req.remoteAddress);
   const connection = req.accept(null, req.origin);
-  clients[req.remoteAddress] = {connection, clientAnswer: null};
-  // add connection to pool
-  connection.on('message', (message) => {
-    if (message.type === 'utf8') {
-      console.log('server: got message from client', message);
-      try {
-        const json = JSON.parse(message.utf8Data);
-        if (players.some(el => el.id == json.id)) { // eslint-disable-line eqeqeq
-          clients[connection.remoteAddress].id = json.id;
-          clients[connection.remoteAddress].clientAnswer = json.answer;
-        } else {
-          connection.send(JSON.stringify({error: `Wrong id ${json.id}`}));
+  if (connection) {
+    clients[req.remoteAddress] = {connection, clientAnswer: null};
+    // add connection to pool
+    connection.on('message', (message) => {
+      if (message.type === 'utf8') {
+        console.log('server: got message from client', message);
+        try {
+          const json = JSON.parse(message.utf8Data);
+          if (players.some(el => el.id == json.id)) { // eslint-disable-line eqeqeq
+            clients[connection.remoteAddress].id = json.id;
+            clients[connection.remoteAddress].clientAnswer = json.answer;
+          } else {
+            connection.send(JSON.stringify({error: `Wrong id ${json.id}`}));
+          }
+        } catch (e) {
+          console.log('server faild to parse json', message.utf8Data);
         }
-      } catch (e) {
-        console.log('server faild to parse json', message.utf8Data);
       }
-    }
-  });
-  connection.on('close', (reason, descr) => {
-    console.log('connection closed', reason, descr, connection.remoteAddress);
-    // remove connection from pool
-    clients[connection.remoteAddress] = null;
-    delete clients[connection.remoteAddress];
-  });
+    });
+    connection.on('close', (reason, descr) => {
+      console.log('connection closed', reason, descr, connection.remoteAddress);
+      // remove connection from pool
+      clients[connection.remoteAddress] = null;
+      delete clients[connection.remoteAddress];
+    });
+    connection.on('error', (err) => {
+      console.log('connection err', err.message, connection.remoteAddress);
+      // remove connection from pool
+      clients[connection.remoteAddress] = null;
+      connection.drop(connection.CLOSE_REASON_PROTOCOL_ERROR);
+      delete clients[connection.remoteAddress];
+    });
+  }
 });
 
 module.exports = app;
